@@ -1,0 +1,139 @@
+# studica_base/config/params.yaml
+#
+# studica_control(control_server)용 하드웨어 설정. 핀 근거는 저장소 루트 pin_setting.md
+# (Project_1st_mission_last Constants.h 기준, 2026-08-10) — 이 파일이 최신이다.
+#
+# base.launch.py가 studica_control의 studica_launch.py에 params_file로 넘긴다.
+#
+# SSoT 쌍 (한쪽만 고치면 조용히 틀어진다):
+#   - titan0.m_N.dist_per_tick(아래 0.00021889 m/tick) ↔ base_node의 enc_scale(1.0).
+#     dist_per_tick을 바꾸면 /titan0/m_N/encoder 단위가 바뀌므로 enc_scale로 다시 m로 맞출 것.
+#   - 초음파/PSD 센서 이름 ↔ studica_repeat teach_node의 센서 토픽 파라미터.
+
+control_server:
+  ros__parameters:
+    use_sim_time: false
+
+    # -------------------------------------------------------------------------
+    # Titan Quad (CAN ID 42) — pin_setting.md §1
+    #   채널 0/1/2 = 3륜 옴니 주행 (내장 엔코더 DIO 0/1, 2/3, 4/5)
+    #   채널 3     = 상하축(OMS Z, 리프트), 반전 (엔코더 DIO 6/7)
+    #   리밋 단자: EMS = motor1 Low, OMS Z 리밋 = motor3 Low → limit_switches: true로 토픽화
+    # -------------------------------------------------------------------------
+    titan:
+      enabled: true
+      sensors: ["titan0"]
+      titan0:
+        can_id: 42
+        motor_freq: 15600
+        encoder_rate_hz: 20
+        motor_update_rate_hz: 50
+        limit_switches: true      # /titan0/m_N/limit_fwd, /limit_rev — EMS(m_1)·리프트 리밋(m_3) 읽기용
+        enable_freshness: false
+        # dist_per_tick = pi * 2 * 0.051 m / 1464 tick = 0.00021889 m/tick
+        # (구코드 MM_PER_TICK 0.2189 mm/tick, r = 51 mm, 1464 tick/rev) → encoder 토픽이 미터 단위
+        m_0:
+          encoder_mode: "quadrature"
+          dist_per_tick: 0.00021889
+          invert_motor: false
+          invert_encoder: false
+          invert_rpm: false
+        m_1:
+          encoder_mode: "quadrature"
+          dist_per_tick: 0.00021889
+          invert_motor: false
+          invert_encoder: false
+          invert_rpm: false
+        m_2:
+          encoder_mode: "quadrature"
+          dist_per_tick: 0.00021889
+          invert_motor: false
+          invert_encoder: false
+          invert_rpm: false
+        m_3:
+          encoder_mode: "quadrature"
+          dist_per_tick: 0.00021889
+          invert_motor: true        # pin_setting.md: motor[3] 상하축만 반전
+          invert_encoder: false
+          invert_rpm: false
+
+    # -------------------------------------------------------------------------
+    # navX IMU — SPI MXP (pin_setting.md §3). ROS 규약(반시계 + yaw)으로 발행됨
+    # -------------------------------------------------------------------------
+    imu:
+      enabled: true
+      name: "imu"
+      topic: "imu"
+      frame_id: "imu_link"
+
+    # -------------------------------------------------------------------------
+    # 초음파 — pin_setting.md §3: 왼쪽 Trigger 20 / Echo 11, 오른쪽 Trigger 21 / Echo 8
+    # -------------------------------------------------------------------------
+    ultrasonic:
+      enabled: true
+      sensors: ["ultrasonic_left", "ultrasonic_right"]
+      ultrasonic_left:
+        ping: 20
+        echo: 11
+        frame_id: "ultrasonic_left_link"
+      ultrasonic_right:
+        ping: 21
+        echo: 8
+        frame_id: "ultrasonic_right_link"
+
+    # -------------------------------------------------------------------------
+    # IR·PSD (Sharp GP2Y) — pin_setting.md §3: 왼쪽 analog 1, 오른쪽 2, 앞쪽 3
+    # 유효 0.1~0.8 m, 밖은 inf. 플랜B는 0.30 m 이내만 서명으로 사용
+    # port는 VMX 채널 인덱스: Analog Input 0~3 = 채널 22~25 (상위 README "VMX Channel Reference").
+    # 따라서 analog 1/2/3 → 23/24/25. frc::AnalogInput 번호를 그대로 넣으면 DIO 채널로 잡혀 동작하지 않는다.
+    # -------------------------------------------------------------------------
+    sharp:
+      enabled: true
+      sensors: ["psd_left", "psd_right", "psd_front"]
+      psd_left:
+        port: 23
+        frame_id: "psd_left_link"
+      psd_right:
+        port: 24
+        frame_id: "psd_right_link"
+      psd_front:
+        port: 25
+        frame_id: "psd_front_link"
+
+    # -------------------------------------------------------------------------
+    # LED — pin_setting.md §4: 초록 13, 빨강 14 (HighCurrentDIO, 출력)
+    # 주행·플랜B에는 불필요하므로 기본 off. 필요 시 enabled: true
+    # -------------------------------------------------------------------------
+    dio:
+      enabled: false
+      sensors: ["led_green", "led_red"]
+      led_green:
+        pin: 13
+        type: "output"
+      led_red:
+        pin: 14
+        type: "output"
+
+    # -------------------------------------------------------------------------
+    # 서보 5개 (연속회전) — pin_setting.md §2: VMX 핀 15~19
+    #   studica_control 서보 컴포넌트는 VMX 핀 번호를 그대로 받는다 (구코드의 -12 변환 불필요, 가정)
+    # 주행·플랜B에는 불필요하므로 기본 off
+    # -------------------------------------------------------------------------
+    servo:
+      enabled: false
+      sensors: ["servo_golf", "servo_palette", "servo_camera", "servo_x", "servo_y"]
+      servo_golf:
+        port: 15
+        type: "continuous"
+      servo_palette:
+        port: 16
+        type: "continuous"
+      servo_camera:
+        port: 17
+        type: "continuous"
+      servo_x:
+        port: 18
+        type: "continuous"
+      servo_y:
+        port: 19
+        type: "continuous"

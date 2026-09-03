@@ -1,0 +1,13 @@
+string[] nodes          # 체크포인트 열. 연속 쌍마다 index.yaml의 레그가 있어야 함
+float32 speed_scale     # 0이면 1.0
+---
+bool success
+string message
+string reached_node
+---
+string leg              # "N1__N2"
+string segment          # "T3" / "R1"
+float32 s
+float32 s_end
+float32 e_lat
+float32 e_th

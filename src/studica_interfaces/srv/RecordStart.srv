@@ -1,0 +1,5 @@
+string from_node
+string to_node
+---
+bool success
+string message

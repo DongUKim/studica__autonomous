@@ -1,0 +1,8 @@
+float32 dx              # 로봇 프레임 [m], 합성 거리 <= 0.3 m
+float32 dy
+float32 speed           # 0이면 0.15 m/s
+---
+bool success
+string message
+---
+float32 remaining

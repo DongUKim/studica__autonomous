@@ -1,0 +1,33 @@
+# repeat_node 재생 제어기 게인 (플랜B §4 초기값). 실기 튜닝은 여기서.
+# core/controller.py RepeatGains 기본값과 SSoT — 한쪽을 바꾸면 다른 쪽도 맞출 것.
+repeat_node:
+  ros__parameters:
+    control_rate_hz: 50.0
+    publish_tracking: true     # /repeat/tracking JSON 발행 (validate_node가 소비)
+
+    # T 세그먼트(병진) 경로추종
+    k_lat: 1.5        # vy = -k_lat * e_lat  [1/s] — 메카넘/옴니 횡보정 주력
+    k_th: 2.0         # wz = k_th * e_th     [1/s] — IMU 기반 헤딩 유지
+    lookahead: 0.06   # 헤딩 목표를 앞서 보는 호장 [m]
+    vmax: 0.35        # 재생 속도 상한 [m/s] (티칭 속도 프로파일이 이보다 낮으면 그쪽이 상한)
+    vmin: 0.05        # 말단 감속 하한 [m/s] — 정지마찰로 멈춰버리지 않게
+    decel: 0.4        # 말단 감속식 v <= sqrt(2*decel*s_remain) [m/s^2]
+    end_tol: 0.02     # 종점 도달 판정 [m] (0.2 s 디바운스)
+    dev_lat: 0.08     # 이탈 판정 횡오차 [m] (0.5 s 지속 시 abort)
+    wz_max: 1.2       # 회전 상한 [rad/s]
+
+    # R 세그먼트(회전) — IMU 단독 P 제어, 종료 |err| < 1도 0.3 s
+    k_yaw: 2.5
+
+    # 서명 보정(드리프트 트리머) — 티칭 유효 서명이 있는 s 구간에서만, 회전 중 미반영
+    sig_k: 0.3
+
+    # 토픽 (studica_base/config/params.yaml 센서 이름과 SSoT)
+    cmd_vel_topic: /cmd_vel
+    odom_topic: /odom
+    imu_topic: /imu
+    ultrasonic_left_topic: /ultrasonic_left/range
+    ultrasonic_right_topic: /ultrasonic_right/range
+    psd_left_topic: /psd_left/range
+    psd_right_topic: /psd_right/range
+    psd_front_topic: /psd_front/range
